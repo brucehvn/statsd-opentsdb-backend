@@ -20,6 +20,7 @@ var flushInterval;
 var opentsdbHost;
 var opentsdbPort;
 var opentsdbTagPrefix;
+var opentsdbTagValuePrefix;
 
 // prefix configuration
 var globalPrefix;
@@ -36,6 +37,8 @@ var counterNamespace = [];
 var timerNamespace   = [];
 var gaugesNamespace  = [];
 var setsNamespace     = [];
+
+var statsdLogger;
 
 var opentsdbStats = {};
 
@@ -73,37 +76,38 @@ var post_stats = function opentsdb_post_stats(statString) {
 
 // Returns a list of "tagname=tagvalue" strings from the given metric name.
 function parse_tags(metric_name) {
-  var parts = metric_name.split(".");
+  var tagsArray = metric_name.split(opentsdbTagPrefix);
   var tags = [];
-  var current_tag_name = "";
-  for (i in parts) {
-    var p = parts[i]
-    if (p.indexOf(opentsdbTagPrefix) == 0) {
-      var tag_name = p.split(opentsdbTagPrefix)[1];
-      current_tag_name = tag_name
-    } else if (current_tag_name != "") {
-      tags.push(current_tag_name + "=" + p);
-      current_tag_name = "";
+  
+  for (rawTag in tagsArray) {
+    // first see if we have something in the format _t_tagname_tv_tagvalue
+    var tagParts = rawTag.split(opentsdbTagValuePrefix);
+    if (tagParts.length < 2) {
+      // try the original format _t_tagname.tagvalue
+      tagParts = rawTag.split(".");
+      if (tagParts.length != 2) {
+        statsdLogger.log('Bad tag format: ' + metric_name);
+        continue;
+      }
     }
+    
+    var current_tag_name = tagParts[0] + "=" + tagParts[1];
+    tags.push(current_tag_name);
   }
-
-  return tags;
+  
+  return(tags);
 }
 
 // Strips out all tag information from the given metric name
 function strip_tags(metric_name) {
-  var parts = metric_name.split(".");
-  var rslt_parts = [];
-  while (parts.length > 0) {
-    if (parts[0].indexOf(opentsdbTagPrefix) == 0) {
-      parts.shift();
-      parts.shift();
-      continue;
-    }
-    rslt_parts.push(parts.shift());
+  var tagsArray = metric_name.split(opentsdbTagPrefix);
+  var retval = "";
+  
+  if (tagsArray.length > 0) {
+    retval = tagsArray.shift();
   }
-
-  return rslt_parts.join(".");
+  
+  return(retval);
 }
 
 
@@ -195,11 +199,13 @@ var backend_status = function opentsdb_status(writeCb) {
   }
 };
 
-exports.init = function opentsdb_init(startup_time, config, events) {
+exports.init = function opentsdb_init(startup_time, config, events, logger) {
   debug = config.debug;
   opentsdbHost = config.opentsdbHost;
   opentsdbPort = config.opentsdbPort;
-  opentsdbTagPrefix = config.opentsdbTagPrefix
+  statsdLogger = logger;
+  opentsdbTagPrefix = config.opentsdbTagPrefix || "_t_";
+  opentsdbTagValuePrefix = config.opentsdbTagValuePrefix || "_tv_";
   config.opentsdb = config.opentsdb || {};
   globalPrefix    = config.opentsdb.globalPrefix;
   prefixCounter   = config.opentsdb.prefixCounter;
