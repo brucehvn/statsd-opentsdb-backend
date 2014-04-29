@@ -76,12 +76,13 @@ var post_stats = function opentsdb_post_stats(statString) {
 
 // Returns a list of "tagname=tagvalue" strings from the given metric name.
 function parse_tags(metric_name) {
+  statsdLogger.log('parseTags, metric_name = ' + metric_name, 'debug');
   var tagsArray = metric_name.split("." + opentsdbTagPrefix);
   var tags = [];
   
   // remove the metric name from the array
   tagsArray.shift();
-  statsdLogger.log('tagsArray = ' + tagsArray.toString());
+  statsdLogger.log('tagsArray = ' + tagsArray.toString(), 'debug');
   var numTags = tagsArray.length;
   
   for (var xctr = 0; xctr < numTags; xctr++) {
@@ -89,12 +90,12 @@ function parse_tags(metric_name) {
     
     // first see if we have something in the format _t_tagname_tv_tagvalue
     var tagParts = rawTag.split("." + opentsdbTagValuePrefix);
-    statsdLogger.log('tagParts = ' + tagParts.toString());
+    statsdLogger.log('tagParts = ' + tagParts.toString(), 'debug');
     if (tagParts.length < 2) {
       // try the original format _t_tagname.tagvalue
       tagParts = rawTag.split(".");
       if (tagParts.length != 2) {
-        statsdLogger.log('Bad tag format: ' + metric_name);
+        statsdLogger.log('Bad tag format: ' + metric_name, 'debug');
         continue;
       }
     }
@@ -120,7 +121,7 @@ function strip_tags(metric_name) {
 
 
 var flush_stats = function opentsdb_flush(ts, metrics) {
-  var suffix = " source=statsd\n";
+  var suffix = " " + postSuffix;
   var starttime = Date.now();
   var statString = '';
   var numStats = 0;
@@ -141,7 +142,7 @@ var flush_stats = function opentsdb_flush(ts, metrics) {
     var value = counters[key];
 
     if (legacyNamespace === true) {
-      statString += 'put stats_counts.' + key + ' ' + ts + ' ' + value + ' ' + tags.join(' ') + suffix;
+      statString += 'put stats_counts.' + stripped_key + ' ' + ts + ' ' + value + ' ' + tags.join(' ') + suffix;
     } else {
       statString += 'put ' + namespace.concat('count').join(".") + ' ' + ts + ' ' + value + ' ' + tags.join(' ') + suffix;
     }
@@ -221,6 +222,7 @@ exports.init = function opentsdb_init(startup_time, config, events, logger) {
   prefixGauge     = config.opentsdb.prefixGauge;
   prefixSet       = config.opentsdb.prefixSet;
   legacyNamespace = config.opentsdb.legacyNamespace;
+  postSuffix = config.opentsdb.postSuffix;
 
   // set defaults for prefixes
   globalPrefix  = globalPrefix !== undefined ? globalPrefix : "stats";
@@ -232,6 +234,7 @@ exports.init = function opentsdb_init(startup_time, config, events, logger) {
   
   opentsdbTagPrefix = opentsdbTagPrefix !== undefined ? opentsdbTagPrefix : "_t_";
   opentsdbTagValuePrefix = opentsdbTagValuePrefix !== undefined ? opentsdbTagValuePrefix : "_tv_";
+  postSuffix = postSuffix !== undefined ? postSuffix : "\n";
 
   statsdLogger.log('opentsdbTagPrefix: ' + opentsdbTagPrefix + ", opentsdbTagValuePrefix: " + opentsdbTagValuePrefix);
   
