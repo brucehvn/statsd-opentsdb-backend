@@ -83,7 +83,7 @@ function parse_tags(metric_name) {
   tagsArray.shift();
   statsdLogger.log('tagsArray = ' + tagsArray.toString());
   
-  for (rawTag in tagsArray) {
+  for (var rawTag in tagsArray) {
     statsdLogger.log('rawTag: ' + rawTag);
     
     // first see if we have something in the format _t_tagname_tv_tagvalue
