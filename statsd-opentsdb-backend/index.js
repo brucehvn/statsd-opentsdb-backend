@@ -82,9 +82,10 @@ function parse_tags(metric_name) {
   // remove the metric name from the array
   tagsArray.shift();
   statsdLogger.log('tagsArray = ' + tagsArray.toString());
+  var numTags = tagsArray.length;
   
-  for (var rawTag in tagsArray) {
-    statsdLogger.log('rawTag: ' + rawTag);
+  for (var xctr = 0; xctr < numTags; xctr++) {
+    var rawTag = tagsArray[xctr];
     
     // first see if we have something in the format _t_tagname_tv_tagvalue
     var tagParts = rawTag.split("." + opentsdbTagValuePrefix);
