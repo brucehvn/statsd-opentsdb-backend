@@ -76,7 +76,7 @@ var post_stats = function opentsdb_post_stats(statString) {
 
 // Returns a list of "tagname=tagvalue" strings from the given metric name.
 function parse_tags(metric_name) {
-  var tagsArray = metric_name.split(opentsdbTagPrefix);
+  var tagsArray = metric_name.split("." + opentsdbTagPrefix);
   var tags = [];
   
   // remove the metric name from the array
@@ -84,7 +84,7 @@ function parse_tags(metric_name) {
   
   for (rawTag in tagsArray) {
     // first see if we have something in the format _t_tagname_tv_tagvalue
-    var tagParts = rawTag.split(opentsdbTagValuePrefix);
+    var tagParts = rawTag.split("." + opentsdbTagValuePrefix);
     if (tagParts.length < 2) {
       // try the original format _t_tagname.tagvalue
       tagParts = rawTag.split(".");
@@ -207,8 +207,8 @@ exports.init = function opentsdb_init(startup_time, config, events, logger) {
   opentsdbHost = config.opentsdbHost;
   opentsdbPort = config.opentsdbPort;
   statsdLogger = logger;
-  opentsdbTagPrefix = config.opentsdbTagPrefix || "_t_";
-  opentsdbTagValuePrefix = config.opentsdbTagValuePrefix || "_tv_";
+  opentsdbTagPrefix = config.opentsdbTagPrefix;
+  opentsdbTagValuePrefix = config.opentsdbTagValuePrefix;
   config.opentsdb = config.opentsdb || {};
   globalPrefix    = config.opentsdb.globalPrefix;
   prefixCounter   = config.opentsdb.prefixCounter;
@@ -224,6 +224,9 @@ exports.init = function opentsdb_init(startup_time, config, events, logger) {
   prefixGauge   = prefixGauge !== undefined ? prefixGauge : "gauges";
   prefixSet     = prefixSet !== undefined ? prefixSet : "sets";
   legacyNamespace = legacyNamespace !== undefined ? legacyNamespace : true;
+  
+  opentsdbTagPrefix = opentsdbTagPrefix !== undefined ? opentsdbTagPrefix : "_t_";
+  opentsdbTagValuePrefix = opentsdbTagValuePrefix !== undefined ? opentsdbTagValuePrefix : "_tv_";
 
 
   if (legacyNamespace === false) {
