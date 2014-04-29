@@ -79,6 +79,9 @@ function parse_tags(metric_name) {
   var tagsArray = metric_name.split(opentsdbTagPrefix);
   var tags = [];
   
+  // remove the metric name from the array
+  tagsArray.shift();
+  
   for (rawTag in tagsArray) {
     // first see if we have something in the format _t_tagname_tv_tagvalue
     var tagParts = rawTag.split(opentsdbTagValuePrefix);
