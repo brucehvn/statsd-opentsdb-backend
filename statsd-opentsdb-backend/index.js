@@ -81,10 +81,14 @@ function parse_tags(metric_name) {
   
   // remove the metric name from the array
   tagsArray.shift();
+  statsdLogger.log('tagsArray = ' + tagsArray.toString());
   
   for (rawTag in tagsArray) {
+    statsdLogger.log('rawTag: ' + rawTag);
+    
     // first see if we have something in the format _t_tagname_tv_tagvalue
     var tagParts = rawTag.split("." + opentsdbTagValuePrefix);
+    statsdLogger.log('tagParts = ' + tagParts.toString());
     if (tagParts.length < 2) {
       // try the original format _t_tagname.tagvalue
       tagParts = rawTag.split(".");
@@ -228,7 +232,8 @@ exports.init = function opentsdb_init(startup_time, config, events, logger) {
   opentsdbTagPrefix = opentsdbTagPrefix !== undefined ? opentsdbTagPrefix : "_t_";
   opentsdbTagValuePrefix = opentsdbTagValuePrefix !== undefined ? opentsdbTagValuePrefix : "_tv_";
 
-
+  statsdLogger.log('opentsdbTagPrefix: ' + opentsdbTagPrefix + ", opentsdbTagValuePrefix: " + opentsdbTagValuePrefix);
+  
   if (legacyNamespace === false) {
     if (globalPrefix !== "") {
       globalNamespace.push(globalPrefix);
