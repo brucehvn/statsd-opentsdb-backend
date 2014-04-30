@@ -109,7 +109,7 @@ function parse_tags(metric_name) {
 
 // Strips out all tag information from the given metric name
 function strip_tags(metric_name) {
-  var tagsArray = metric_name.split(opentsdbTagPrefix);
+  var tagsArray = metric_name.split("." + opentsdbTagPrefix);
   var retval = "";
   
   if (tagsArray.length > 0) {
@@ -223,6 +223,7 @@ exports.init = function opentsdb_init(startup_time, config, events, logger) {
   prefixSet       = config.opentsdb.prefixSet;
   legacyNamespace = config.opentsdb.legacyNamespace;
   postSuffix = config.opentsdb.postSuffix;
+  counterSuffix = config.opentsdb.counterSuffix;
 
   // set defaults for prefixes
   globalPrefix  = globalPrefix !== undefined ? globalPrefix : "stats";
@@ -235,8 +236,9 @@ exports.init = function opentsdb_init(startup_time, config, events, logger) {
   opentsdbTagPrefix = opentsdbTagPrefix !== undefined ? opentsdbTagPrefix : "_t_";
   opentsdbTagValuePrefix = opentsdbTagValuePrefix !== undefined ? opentsdbTagValuePrefix : "_tv_";
   postSuffix = postSuffix !== undefined ? postSuffix : "\n";
+  counterSuffix = counterSuffix !== undefined ? counterSuffix : "";
 
-  statsdLogger.log('opentsdbTagPrefix: ' + opentsdbTagPrefix + ", opentsdbTagValuePrefix: " + opentsdbTagValuePrefix);
+  statsdLogger.log('opentsdbTagPrefix: ' + opentsdbTagPrefix + ", opentsdbTagValuePrefix: " + opentsdbTagValuePrefix, "debug");
   
   if (legacyNamespace === false) {
     if (globalPrefix !== "") {
