@@ -179,7 +179,11 @@ var flush_stats = function opentsdb_flush(ts, metrics) {
     var stripped_key = strip_tags(key)
 
     var namespace = setsNamespace.concat(stripped_key);
-    statString += 'put ' + namespace.join(".") + '.count ' + ts + ' ' + sets[key].values().length + ' ' + tags.join(' ') + suffix;
+    statString += 'put ' + namespace.join(".");
+    if (counterSuffix.length > 0) {
+      statString += '.' + counterSuffix;
+    }
+    statString += ' ' + ts + ' ' + sets[key].values().length + ' ' + tags.join(' ') + suffix;
     numStats += 1;
   }
 
