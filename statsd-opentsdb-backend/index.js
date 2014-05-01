@@ -76,13 +76,13 @@ var post_stats = function opentsdb_post_stats(statString) {
 
 // Returns a list of "tagname=tagvalue" strings from the given metric name.
 function parse_tags(metric_name) {
-  statsdLogger.log('parseTags, metric_name = ' + metric_name, 'debug');
+  if (debug) { statsdLogger.log('parseTags, metric_name = ' + metric_name, 'DEBUG'); }
   var tagsArray = metric_name.split("." + opentsdbTagPrefix);
   var tags = [];
   
   // remove the metric name from the array
   tagsArray.shift();
-  statsdLogger.log('tagsArray = ' + tagsArray.toString(), 'debug');
+  if (debug) { statsdLogger.log('tagsArray = ' + tagsArray.toString(), 'DEBUG'); }
   var numTags = tagsArray.length;
   
   for (var xctr = 0; xctr < numTags; xctr++) {
@@ -90,12 +90,12 @@ function parse_tags(metric_name) {
     
     // first see if we have something in the format _t_tagname_tv_tagvalue
     var tagParts = rawTag.split("." + opentsdbTagValuePrefix);
-    statsdLogger.log('tagParts = ' + tagParts.toString(), 'debug');
+    if (debug) { statsdLogger.log('tagParts = ' + tagParts.toString(), 'DEBUG'); }
     if (tagParts.length < 2) {
       // try the original format _t_tagname.tagvalue
       tagParts = rawTag.split(".");
       if (tagParts.length != 2) {
-        statsdLogger.log('Bad tag format: ' + metric_name, 'debug');
+        if (debug) { statsdLogger.log('Bad tag format: ' + metric_name, 'DEBUG'); }
         continue;
       }
     }
@@ -241,7 +241,7 @@ exports.init = function opentsdb_init(startup_time, config, events, logger) {
   postSuffix = postSuffix !== undefined ? postSuffix : "\n";
   counterSuffix = counterSuffix !== undefined ? counterSuffix : "";
 
-  statsdLogger.log('opentsdbTagPrefix: ' + opentsdbTagPrefix + ", opentsdbTagValuePrefix: " + opentsdbTagValuePrefix, "debug");
+  if (debug) { statsdLogger.log('opentsdbTagPrefix: ' + opentsdbTagPrefix + ", opentsdbTagValuePrefix: " + opentsdbTagValuePrefix, "DEBUG"); }
   
   if (legacyNamespace === false) {
     if (globalPrefix !== "") {
