@@ -264,7 +264,7 @@ var backend_status = function opentsdb_status(writeCb) {
 exports.init = function opentsdb_init(startup_time, config, events, logger) {
   debug = config.debug;
   opentsdbHosts = config.opentsdbHosts;
-  opentsdbDeadHostRetry = config.opentsdbDeadHostRetry;
+  opentsdbDeadHostRetry = config.opentsdbDeadHostRetry || 15;
   opentsdbSelectedHost = null;
   statsdLogger = logger;
   opentsdbTagPrefix = config.opentsdbTagPrefix;
@@ -293,7 +293,7 @@ exports.init = function opentsdb_init(startup_time, config, events, logger) {
   counterSuffix = counterSuffix !== undefined ? counterSuffix : "";
 
   if (debug) { statsdLogger.log('opentsdbTagPrefix: ' + opentsdbTagPrefix + ", opentsdbTagValuePrefix: " + opentsdbTagValuePrefix, "DEBUG"); }
-  if (debug) { statsdLogger.log('opentesdbDeadHostRetry: ' + opentsdbDeadHostRetry + ', opentsdbHosts: ' + opentsdbHosts, "DEBUG"); }
+  if (debug) { statsdLogger.log('opentsdbDeadHostRetry: ' + opentsdbDeadHostRetry + ', opentsdbHosts: ' + opentsdbHosts, "DEBUG"); }
   
   if (legacyNamespace === false) {
     if (globalPrefix !== "") {
