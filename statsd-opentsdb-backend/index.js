@@ -17,8 +17,11 @@ var net = require('net'),
 
 var debug;
 var flushInterval;
-var opentsdbHost;
-var opentsdbPort;
+
+var opentsdbHosts;
+var opentsdbSelectedHost = null;
+var opentsdbDeadHostRetry;
+
 var opentsdbTagPrefix;
 var opentsdbTagValuePrefix;
 
@@ -42,35 +45,84 @@ var statsdLogger;
 
 var opentsdbStats = {};
 
+function get_timestamp() {
+  return Math.round(new Date().getTime() / 1000);
+}
+
+var select_host = function opentsdb_select_host() {
+  opentsdbSelectedHost = null;
+
+  if (debug) { util.log('Selecting new opentsdb host.'); }
+
+  for (var i in opentsdbHosts) {
+    // If no deadTime value has been defined we assume host is alive and return it
+    if (typeof opentsdbHosts[i].deadTime === 'undefined') {
+      if (debug) { util.log('Selected ' + opentsdbHosts[i].host + ' as assumed live host.\n'); }
+      opentsdbSelectedHost = opentsdbHosts[i];
+
+      return opentsdbHosts[i];
+    } else if (get_timestamp() - opentsdbHosts[i].deadTime >= opentsdbDeadHostRetry) {
+      if (debug) { util.log('Retrying ' + opentsdbHosts[i].host + ' as current live host.\n'); }
+      delete opentsdbHosts[i].deadTime; // Remove expired deadTime
+      opentsdbSelectedHost = opentsdbHosts[i];
+
+      return opentsdbHosts[i];
+    }
+  }
+
+  util.log('Failed to find a opentsdb host that was not flagged as dead, will attempt again shortly.\n');
+  return opentsdbSelectedHost;
+}
+
+var mark_dead_host = function opentsdb_mark_dead_host(deadHost) {
+  opentsdbSelectedHost = null;
+
+  for (var i in opentsdbHosts) {
+    if (opentsdbHosts[i].host == deadHost.host) {
+      var ts = get_timestamp();
+      opentsdbHosts[i].deadTime = ts;
+
+      util.log(deadHost.host + ' marked dead. Host will be re-checked for availability after ' + opentsdbDeadHostRetry + ' seconds.\n');
+    }
+  }
+}
+
 var post_stats = function opentsdb_post_stats(statString) {
   var last_flush = opentsdbStats.last_flush || 0;
   var last_exception = opentsdbStats.last_exception || 0;
+
+  var opentsdbHost = opentsdbSelectedHost || select_host();
+
   if (opentsdbHost) {
     try {
-      var opentsdb = net.createConnection(opentsdbPort, opentsdbHost);
+      var opentsdb = net.createConnection(opentsdbHost.port, opentsdbHost.host);
       opentsdb.addListener('error', function(connectionException){
+        mark_dead_host(opentsdbHost);
+
         if (debug) {
           util.log(connectionException);
         }
       });
       opentsdb.on('connect', function() {
-        var ts = Math.round(new Date().getTime() / 1000);
+        var ts = get_timestamp();
         var namespace = globalNamespace.concat('statsd');
         statString += 'put ' + namespace.join(".") + '.opentsdbStats.last_exception ' + last_exception + ' ' + ts + "\n";
         statString += 'put ' + namespace.join(".") + '.opentsdbStats.last_flush ' + last_flush + ' ' + ts + "\n";
-		if (debug) {
-			util.log(statString)
-		}
+		    if (debug) {
+			    util.log(statString)
+		    }
         this.write(statString);
         this.end();
-        opentsdbStats.last_flush = Math.round(new Date().getTime() / 1000);
+        opentsdbStats.last_flush = get_timestamp();
       });
     } catch(e){
       if (debug) {
         util.log(e);
       }
-      opentsdbStats.last_exception = Math.round(new Date().getTime() / 1000);
+      opentsdbStats.last_exception = get_timestamp();
     }
+  } else {
+    util.log('No available host found, skipping stats post.')
   }
 }
 
@@ -213,8 +265,9 @@ var backend_status = function opentsdb_status(writeCb) {
 
 exports.init = function opentsdb_init(startup_time, config, events, logger) {
   debug = config.debug;
-  opentsdbHost = config.opentsdbHost;
-  opentsdbPort = config.opentsdbPort;
+  opentsdbHosts = config.opentsdbHosts;
+  opentsdbDeadHostRetry = config.opentsdbDeadHostRetry || 15;
+  opentsdbSelectedHost = null;
   statsdLogger = logger;
   opentsdbTagPrefix = config.opentsdbTagPrefix;
   opentsdbTagValuePrefix = config.opentsdbTagValuePrefix;
@@ -242,6 +295,7 @@ exports.init = function opentsdb_init(startup_time, config, events, logger) {
   counterSuffix = counterSuffix !== undefined ? counterSuffix : "";
 
   if (debug) { statsdLogger.log('opentsdbTagPrefix: ' + opentsdbTagPrefix + ", opentsdbTagValuePrefix: " + opentsdbTagValuePrefix, "DEBUG"); }
+  if (debug) { statsdLogger.log('opentsdbDeadHostRetry: ' + opentsdbDeadHostRetry + ', opentsdbHosts: ' + opentsdbHosts.length, "DEBUG"); }
   
   if (legacyNamespace === false) {
     if (globalPrefix !== "") {
