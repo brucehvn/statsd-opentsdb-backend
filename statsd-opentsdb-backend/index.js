@@ -95,7 +95,7 @@ var post_stats = function opentsdb_post_stats(statString) {
 
   if (opentsdbHost) {
     try {
-      var opentsdb = net.createConnection(opentsdbHost.host, opentsdbHost.port);
+      var opentsdb = net.createConnection(opentsdbHost.port, opentsdbHost.host);
       opentsdb.addListener('error', function(connectionException){
         mark_dead_host(opentsdbHost);
 
