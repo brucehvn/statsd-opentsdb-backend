@@ -12,8 +12,8 @@ publishes stats to OpenTSDB (http://opentsdb.net)
 You have to give basic information about your OpenTSDB server to use
 ```
 {
-  opentsdbHosts: [{host: 'localhost', port: 4242}],
-  opentsdbDeadHostRetry: 15,
+  opentsdbHosts: [{host: 'localhost', port: 4242}]
+, opentsdbDeadHostRetry: 15
 , opentsdbTagPrefix: '_t_'
 , opentsdbTagValuePrefix: '_tv_'
 , opentsdbDeadHostRetry: 15
