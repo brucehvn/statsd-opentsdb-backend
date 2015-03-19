@@ -11,9 +11,10 @@ publishes stats to OpenTSDB (http://opentsdb.net)
 ## Configuration
 You have to give basic information about your OpenTSDB server to use
 ```
-{ opentsdbHost: 'localhost'
-, opentsdbPort: 4242
+{ opentsdbHosts: [{host: 'localhost', port: 4242}]
 , opentsdbTagPrefix: '_t_'
+, opentsdbTagValuePrefix: '_tv_'
+, opentsdbDeadHostRetry: 15
 }
 ```
 
@@ -21,7 +22,14 @@ You have to give basic information about your OpenTSDB server to use
 This backend allows you to attach OpenTSDB tags to your metrics. To add a counter
 called `gorets` and tag the data `foo=bar`, you'd write the following to statsd:
 
-    gorets._t_foo.bar:261|c
+    gorets._t_foo._tv_bar:261|c
+
+## Multiple opentsdb backend node support
+This fork extends support for opentsdb by allowing you to configure an array of hash elements defining available hosts.
+opentsdbHosts: [{host: 'localhost', port: 4242}]
+
+Further configuration of this feature allows you to set the dead host retry period. Default value for this is 15
+seconds. The configuration option for this setting is opentsdbDeadHostRetry.
 
 ## Dependencies
 - none
