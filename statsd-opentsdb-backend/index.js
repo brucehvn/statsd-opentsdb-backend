@@ -53,8 +53,10 @@ var select_host = function opentsdb_select_host() {
     for (var i in opentsdbHosts) {
       // If no deadTime value has been defined we assume host is alive and return it
       if (typeof opentsdbHosts[i].deadTime === 'undefined') {
+        if (debug) util.log('Selected ' + opentsdbHosts[i] + ' as assumed live host.\n');
         return opentsdbHosts[i];
       } else if (get_timestamp() - opentsdbHosts[i].deadTime >= opentsdbDeadHostRetry) {
+        if (debug) util.log('Retrying ' + opentsdbHosts[i] + ' as current live host.\n');
         delete opentsdbHosts[i].deadTime; // Remove expired deadTime
         return opentsdbHosts[i]; // Return host
       }
