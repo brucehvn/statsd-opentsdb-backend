@@ -52,37 +52,37 @@ function get_timestamp() {
 var select_host = function opentsdb_select_host() {
   opentsdbSelectedHost = null;
 
-  if (opentsdbHosts.length > 0) {
-    for (var i in opentsdbHosts) {
-      // If no deadTime value has been defined we assume host is alive and return it
-      if (typeof opentsdbHosts[i].deadTime === 'undefined') {
-        if (debug) { util.log('Selected ' + opentsdbHosts[i] + ' as assumed live host.\n'); }
-        opentsdbSelectedHost = opentsdbHosts[i];
-      } else if (get_timestamp() - opentsdbHosts[i].deadTime >= opentsdbDeadHostRetry) {
-        if (debug) { util.log('Retrying ' + opentsdbHosts[i] + ' as current live host.\n'); }
-        delete opentsdbHosts[i].deadTime; // Remove expired deadTime
-        opentsdbSelectedHost = opentsdbHosts[i];
-      }
+  if (debug) { util.log('Selecting new opentsdb host.'); }
+
+  for (var i in opentsdbHosts) {
+    // If no deadTime value has been defined we assume host is alive and return it
+    if (typeof opentsdbHosts[i].deadTime === 'undefined') {
+      if (debug) { util.log('Selected ' + opentsdbHosts[i].host + ' as assumed live host.\n'); }
+      opentsdbSelectedHost = opentsdbHosts[i];
+
+      return opentsdbHosts[i];
+    } else if (get_timestamp() - opentsdbHosts[i].deadTime >= opentsdbDeadHostRetry) {
+      if (debug) { util.log('Retrying ' + opentsdbHosts[i].host + ' as current live host.\n'); }
+      delete opentsdbHosts[i].deadTime; // Remove expired deadTime
+      opentsdbSelectedHost = opentsdbHosts[i];
+
+      return opentsdbHosts[i];
     }
   }
 
-  if (opentsdbSelectedHost == null) util.log('Failed to find a opentsdb host that was not flagged as dead, will attempt again shortly.\n');
+  util.log('Failed to find a opentsdb host that was not flagged as dead, will attempt again shortly.\n');
   return opentsdbSelectedHost;
 }
 
 var mark_dead_host = function opentsdb_mark_dead_host(deadHost) {
   opentsdbSelectedHost = null;
 
-  if (opentsdbHosts.length > 0) {
-    for (var i in opentsdbHosts) {
-      if (opentsdbHosts[i].host == deadHost.host) {
-        var ts = get_timestamp();
-        opentsdbHosts[i].deadTime = ts;
+  for (var i in opentsdbHosts) {
+    if (opentsdbHosts[i].host == deadHost.host) {
+      var ts = get_timestamp();
+      opentsdbHosts[i].deadTime = ts;
 
-        if (debug) {
-          util.log(deadHost.host + ' marked dead. Host will be re-checked for availability after ' + opentsdbDeadHostRetry + ' seconds.\n');
-        }
-      }
+      util.log(deadHost.host + ' marked dead. Host will be re-checked for availability after ' + opentsdbDeadHostRetry + ' seconds.\n');
     }
   }
 }
@@ -91,11 +91,11 @@ var post_stats = function opentsdb_post_stats(statString) {
   var last_flush = opentsdbStats.last_flush || 0;
   var last_exception = opentsdbStats.last_exception || 0;
 
-  opentsdbHost = opentsdbSelectedHost || select_host();
+  var opentsdbHost = opentsdbSelectedHost || select_host();
 
   if (opentsdbHost) {
     try {
-      var opentsdb = net.createConnection(opentsdbHost);
+      var opentsdb = net.createConnection(opentsdbHost.host, opentsdbHost.port);
       opentsdb.addListener('error', function(connectionException){
         mark_dead_host(opentsdbHost);
 
@@ -121,6 +121,8 @@ var post_stats = function opentsdb_post_stats(statString) {
       }
       opentsdbStats.last_exception = get_timestamp();
     }
+  } else {
+    util.log('No available host found, skipping stats post.')
   }
 }
 
