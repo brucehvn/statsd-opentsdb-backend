@@ -295,7 +295,7 @@ exports.init = function opentsdb_init(startup_time, config, events, logger) {
   counterSuffix = counterSuffix !== undefined ? counterSuffix : "";
 
   if (debug) { statsdLogger.log('opentsdbTagPrefix: ' + opentsdbTagPrefix + ", opentsdbTagValuePrefix: " + opentsdbTagValuePrefix, "DEBUG"); }
-  if (debug) { statsdLogger.log('opentsdbDeadHostRetry: ' + opentsdbDeadHostRetry + ', opentsdbHosts: ' + opentsdbHosts, "DEBUG"); }
+  if (debug) { statsdLogger.log('opentsdbDeadHostRetry: ' + opentsdbDeadHostRetry + ', opentsdbHosts: ' + opentsdbHosts.length, "DEBUG"); }
   
   if (legacyNamespace === false) {
     if (globalPrefix !== "") {
